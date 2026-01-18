@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <title>Allocation Token Dashboard</title>
 
-  <!-- ✅ BULLET-PROOF Ethers v5 -->
+  <!-- ✅ Bullet-proof ethers v5 -->
   <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
 
   <style>
@@ -21,11 +21,6 @@
       background: #020617;
       padding: 25px;
       border-radius: 14px;
-      box-shadow: 0 20px 40px rgba(0,0,0,0.6);
-    }
-    h2 {
-      text-align: center;
-      margin-bottom: 20px;
     }
     button {
       width: 100%;
@@ -76,7 +71,7 @@
 
   <h3>Owner Allocation</h3>
   <input id="recipient" placeholder="Recipient Address" />
-  <input id="amount" placeholder="Amount (whole tokens)" />
+  <input id="amount" type="number" placeholder="Amount (whole tokens)" />
   <button id="allocateBtn">Allocate Tokens</button>
 
   <div class="status" id="status"></div>
@@ -94,11 +89,9 @@
     "function allocate(address,uint256)"
   ];
 
-  const connectBtn = document.getElementById("connectBtn");
-  const allocateBtn = document.getElementById("allocateBtn");
   const statusEl = document.getElementById("status");
 
-  connectBtn.onclick = async () => {
+  document.getElementById("connectBtn").onclick = async () => {
     try {
       if (!window.ethereum) {
         alert("MetaMask not detected");
@@ -107,7 +100,6 @@
 
       provider = new ethers.providers.Web3Provider(window.ethereum);
       await provider.send("eth_requestAccounts", []);
-
       signer = provider.getSigner();
 
       const network = await provider.getNetwork();
@@ -125,7 +117,6 @@
         `Connected: ${address.slice(0,6)}...${address.slice(-4)}`;
 
       await refreshData();
-
       statusEl.innerText = "Wallet connected";
 
     } catch (err) {
@@ -136,6 +127,7 @@
 
   async function refreshData() {
     const address = await signer.getAddress();
+
     const balance = await contract.balanceOf(address);
     const supply = await contract.totalSupply();
 
@@ -146,7 +138,7 @@
       `Total Supply: ${ethers.utils.formatUnits(supply, 18)} ALLOC`;
   }
 
-  allocateBtn.onclick = async () => {
+  document.getElementById("allocateBtn").onclick = async () => {
     try {
       if (!contract) {
         alert("Connect wallet first");
@@ -154,14 +146,22 @@
       }
 
       const recipient = document.getElementById("recipient").value;
-      const amount = document.getElementById("amount").value;
+      const amount = Number(document.getElementById("amount").value);
 
-      const tx = await contract.allocate(
-        recipient,
-        ethers.utils.parseUnits(amount, 18)
-      );
+      if (!ethers.utils.isAddress(recipient)) {
+        alert("Invalid recipient address");
+        return;
+      }
 
-      statusEl.innerText = "Transaction sent...";
+      if (!Number.isInteger(amount) || amount <= 0) {
+        alert("Enter a valid whole number");
+        return;
+      }
+
+      statusEl.innerText = "Sending transaction...";
+
+      // ✅ PASS WHOLE TOKENS ONLY
+      const tx = await contract.allocate(recipient, amount);
       await tx.wait();
 
       statusEl.innerText = "Allocation successful";
@@ -175,4 +175,3 @@
 </script>
 </body>
 </html>
-
